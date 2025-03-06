@@ -25,7 +25,7 @@ include $(TOPDIR)/include/scan-build.mk
 include $(TOPDIR)/include/fanalyzer.mk
 
 TARGETS	= $(SHIMNAME) $(SHIMNXNAME)
-TARGETS += $(SHIMNAME).debug $(SHIMNXNAME).debug $(MMNAME).debug $(FBNAME).debug
+TARGETS += $(SHIMNAME).debug $(SHIMNXNAME).debug $(MMNAME).debug $(if $(DISABLE_FALLBACK),,$(FBNAME).debug)
 ifneq ($(origin ENABLE_SHIM_HASH),undefined)
 TARGETS += $(SHIMHASHNAME)
 endif
@@ -33,11 +33,16 @@ ifneq ($(origin ENABLE_SHIM_DEVEL),undefined)
 CFLAGS += -DENABLE_SHIM_DEVEL
 endif
 ifneq ($(origin ENABLE_SHIM_CERT),undefined)
-TARGETS	+= $(MMNAME).signed $(FBNAME).signed
+TARGETS	+= $(MMNAME).signed $(if $(DISABLE_FALLBACK),,$(FBNAME).signed)
 CFLAGS += -DENABLE_SHIM_CERT
 else
-TARGETS += $(MMNAME) $(FBNAME)
+TARGETS += $(MMNAME) $(if $(DISABLE_FALLBACK),,$(FBNAME))
 endif
+ifneq ($(origin DISABLE_FALLBACK),undefined)
+$(warning Building shim without fallback image support)
+CFLAGS += -DDISABLE_FALLBACK
+endif
+
 OBJS	= shim.o globals.o mok.o netboot.o cert.o replacements.o tpm.o version.o errlog.o sbat.o sbat_data.o sbat_var.o pe.o pe-relocate.o httpboot.o csv.o load-options.o
 OBJS_NX	= shim.o globals_nx.o mok.o netboot.o cert.o replacements.o tpm.o version.o errlog.o sbat.o sbat_data.o sbat_var.o pe.o pe-relocate.o httpboot.o csv.o load-options.o
 KEYS	= shim_cert.h ocsp.* ca.* shim.crt shim.csr shim.p12 shim.pem shim.key shim.cer
